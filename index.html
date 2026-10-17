@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gear Calculator</title>
+<style>
+  :root{--bg:#14161a;--card:#1d2026;--line:#2c313a;--txt:#e8eaee;--mut:#8b93a1;--acc:#ffb020;--acc2:#4cc9f0}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,Segoe UI,Roboto,sans-serif;padding:16px}
+  .wrap{max-width:720px;margin:0 auto}
+  h1{font-size:22px;margin:4px 0 14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  h2{font-size:14px;margin:0 0 12px;color:var(--acc);text-transform:uppercase;letter-spacing:.06em}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  label{display:flex;flex-direction:column;font-size:13px;color:var(--mut);gap:4px;flex:1;min-width:120px}
+  input{background:#101216;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:18px;width:100%}
+  input:focus{outline:2px solid var(--acc);border-color:transparent}
+  .res{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+  .box{background:#101216;border:1px solid var(--line);border-radius:10px;padding:12px}
+  .t{font-size:12px;color:var(--mut);margin-bottom:4px}
+  .v{font-size:24px;font-weight:700;color:var(--acc2)}
+  .v.a{color:var(--acc)}
+  .n{font-size:11px;color:var(--mut);margin-top:3px}
+  details{margin-top:12px;font-size:13px;color:var(--mut)}
+  summary{cursor:pointer}
+  .teeth{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .teeth span{background:#101216;border:1px solid var(--line);border-radius:6px;padding:3px 7px;color:var(--txt)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Gear Calculator</h1>
+
+  <div class="card">
+    <h2>Normal gear</h2>
+    <div class="row">
+      <label>Teeth<input id="nz" type="number" min="1" value="12"></label>
+    </div>
+    <div class="res">
+      <div class="box"><div class="t">Angle between teeth</div><div class="v a" id="nStep"></div><div class="n">360 / X</div></div>
+      <div class="box"><div class="t">Base angle</div><div class="v a" id="nBase"></div><div class="n">(360 / X) − 90</div></div>
+      <div class="box"><div class="t">Offset</div><div class="v" id="nOff"></div><div class="n" id="nOffN"></div></div>
+    </div>
+    <details><summary>Angle of each tooth</summary><div class="teeth" id="nTeeth"></div></details>
+  </div>
+
+  <div class="card">
+    <h2>Single bevel gear</h2>
+    <div class="row">
+      <label>Teeth<input id="sz" type="number" min="1" value="6"></label>
+    </div>
+    <div class="res">
+      <div class="box"><div class="t">Angle between teeth</div><div class="v a" id="sStep"></div><div class="n">360 / X</div></div>
+      <div class="box"><div class="t">Base angle</div><div class="v a" id="sBase"></div><div class="n">(360 / X) − 90</div></div>
+      <div class="box"><div class="t">Bevel offset</div><div class="v" id="sOff"></div><div class="n" id="sOffN"></div></div>
+    </div>
+    <details><summary>Angle of each tooth</summary><div class="teeth" id="sTeeth"></div></details>
+  </div>
+
+  <div class="card">
+    <h2>Bevel pair (two gears meshing, 90°)</h2>
+    <div class="row">
+      <label>Teeth A<input id="pa" type="number" min="1" value="6"></label>
+      <label>Teeth B<input id="pb" type="number" min="1" value="20"></label>
+    </div>
+    <div class="res">
+      <div class="box"><div class="t">Cone angle A</div><div class="v a" id="angA"></div></div>
+      <div class="box"><div class="t">Cone angle B</div><div class="v a" id="angB"></div></div>
+    </div>
+    <div class="n" style="margin-top:8px">A = arctan(A / B), B = 90° − A</div>
+  </div>
+</div>
+
+<script>
+const OFF = {6:-0.350, 8:-0.275, 10:-0.225, 12:-0.175, 14:-0.125, 16:-0.075, 18:-0.025, 20:0.025};
+const BEV = {6:0.75, 8:0.85};
+const offF = z => 0.025*z - 0.475;
+const bevF = z => 0.05*z + 0.45;
+const $ = id => document.getElementById(id);
+const r = (n,d=3) => String(Math.round(n*10**d)/10**d);
+
+function gear(inId, p, table, formula, formulaText){
+  const z = +$(inId).value;
+  if(!(z>0)) return;
+  const step = 360/z, base = step-90;
+  $(p+'Step').textContent = r(step,2)+'°';
+  $(p+'Base').textContent = r(base,2)+'°';
+  $(p+'Off').textContent = r(z in table ? table[z] : formula(z));
+  $(p+'OffN').textContent = z in table ? 'known' : 'estimated ('+formulaText+')';
+  let h='';
+  for(let k=0;k<z;k++) h += `<span>${r(base+k*step,2)}°</span>`;
+  $(p+'Teeth').innerHTML = h;
+}
+
+function pair(){
+  const a = +$('pa').value, b = +$('pb').value;
+  if(!(a>0 && b>0)) return;
+  const A = Math.atan(a/b)*180/Math.PI;
+  $('angA').textContent = r(A,2)+'°';
+  $('angB').textContent = r(90-A,2)+'°';
+}
+
+$('nz').addEventListener('input',()=>gear('nz','n',OFF,offF,'0.025·X − 0.475'));
+$('sz').addEventListener('input',()=>gear('sz','s',BEV,bevF,'0.05·X + 0.45'));
+['pa','pb'].forEach(i=>$(i).addEventListener('input',pair));
+gear('nz','n',OFF,offF,'0.025·X − 0.475');
+gear('sz','s',BEV,bevF,'0.05·X + 0.45');
+pair();
+</script>
+</body>
+</html>
