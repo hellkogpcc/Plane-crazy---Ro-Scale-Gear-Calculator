@@ -19,4 +19,6 @@ Blue = X
 Green = X
 Compressor = X
 
+https://hellkogpcc.github.io/Plane-crazy---Ro-Scale-Gear-Calculator/
+
 YOUTUBE VIDEO SOON
